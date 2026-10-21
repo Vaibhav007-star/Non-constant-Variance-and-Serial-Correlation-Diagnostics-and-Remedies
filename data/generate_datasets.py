@@ -10,7 +10,9 @@ import numpy as np
 import pandas as pd
 import os
 
-def generate_datasets(output_dir="."):
+def generate_datasets(output_dir=None):
+    if output_dir is None:
+        output_dir = os.path.dirname(os.path.abspath(__file__))
     np.random.seed(42)
     os.makedirs(output_dir, exist_ok=True)
 

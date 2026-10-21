@@ -41,8 +41,8 @@ def plot_residuals_vs_fitted(model, title="Residuals vs Fitted Values (Heterosce
         pass
         
     ax.set_title(title, fontsize=12, fontweight="bold", pad=12)
-    ax.set_xlabel("Fitted Values ($\hat{Y}$)", fontsize=11)
-    ax.set_ylabel("Residuals ($e_i$)", fontsize=11)
+    ax.set_xlabel(r"Fitted Values ($\hat{Y}$)", fontsize=11)
+    ax.set_ylabel(r"Residuals ($e_i$)", fontsize=11)
     ax.legend(loc="upper right")
     fig.tight_layout()
     return fig
@@ -69,8 +69,8 @@ def plot_scale_location(model, title="Scale-Location Plot (Homoscedasticity Chec
         pass
         
     ax.set_title(title, fontsize=12, fontweight="bold", pad=12)
-    ax.set_xlabel("Fitted Values ($\hat{Y}$)", fontsize=11)
-    ax.set_ylabel("$\sqrt{|Standardized Residuals|}$", fontsize=11)
+    ax.set_xlabel(r"Fitted Values ($\hat{Y}$)", fontsize=11)
+    ax.set_ylabel(r"$\sqrt{|Standardized Residuals|}$", fontsize=11)
     ax.legend(loc="upper right")
     fig.tight_layout()
     return fig
@@ -96,7 +96,7 @@ def plot_autocorrelation(model, nlags=20, title="Autocorrelation Function (ACF) 
     """
     resid = model.resid
     nlags = min(nlags, len(resid) // 3)
-    acf_vals, confint = acf(resid, nlags=nlags, alpha=0.05)
+    acf_vals, confint = acf(resid, nlags=nlags, alpha=0.05, result_object=False)
     
     fig, ax = plt.subplots(figsize=(9, 4.5))
     lags = np.arange(len(acf_vals))
@@ -111,7 +111,7 @@ def plot_autocorrelation(model, nlags=20, title="Autocorrelation Function (ACF) 
     
     ax.set_title(title, fontsize=12, fontweight="bold", pad=12)
     ax.set_xlabel("Lag (k)", fontsize=11)
-    ax.set_ylabel("Autocorrelation $\rho_k$", fontsize=11)
+    ax.set_ylabel(r"Autocorrelation $\rho_k$", fontsize=11)
     ax.set_ylim(-1.05, 1.05)
     ax.legend(loc="upper right")
     fig.tight_layout()
@@ -131,13 +131,13 @@ def plot_lag_scatter(model, title="Residual Lag Plot ($e_t$ vs. $e_{t-1}$ — Se
     
     # Linear fit line
     m, b = np.polyfit(e_tm1, e_t, 1)
-    ax.plot(e_tm1, m * e_tm1 + b, color="#B45309", linewidth=2, label=f"Fit ($\hat{{\rho}} = {m:.3f}$)")
+    ax.plot(e_tm1, m * e_tm1 + b, color="#B45309", linewidth=2, label=fr"Fit ($\hat{{\rho}} = {m:.3f}$)")
     
     ax.axhline(0, color="gray", linestyle="--", linewidth=0.8)
     ax.axvline(0, color="gray", linestyle="--", linewidth=0.8)
     ax.set_title(title, fontsize=12, fontweight="bold", pad=12)
-    ax.set_xlabel("Residual at $t-1$ ($e_{t-1}$)", fontsize=11)
-    ax.set_ylabel("Residual at $t$ ($e_t$)", fontsize=11)
+    ax.set_xlabel(r"Residual at $t-1$ ($e_{t-1}$)", fontsize=11)
+    ax.set_ylabel(r"Residual at $t$ ($e_t$)", fontsize=11)
     ax.legend(loc="upper left")
     fig.tight_layout()
     return fig

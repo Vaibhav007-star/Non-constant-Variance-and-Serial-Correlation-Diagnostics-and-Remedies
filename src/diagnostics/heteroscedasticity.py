@@ -64,7 +64,7 @@ def run_goldfeld_quandt_test(model, split_idx=None):
     y = model.model.endog
     X = model.model.exog
     split = split_idx if split_idx is not None else len(y) // 2
-    f_stat, p_val, ordering = het_goldfeldquandt(y, X, split=split)
+    f_stat, p_val, ordering = het_goldfeldquandt(y, X, split=split, result_object=False)
     
     verdict = "Heteroscedasticity Detected (Reject H0 at p < 0.05)" if p_val < 0.05 else "Homoscedasticity (Fail to Reject H0)"
     

@@ -46,7 +46,7 @@ def run_breusch_godfrey_test(model, nlags=4):
     """
     Computes Breusch-Godfrey LM test for higher order serial correlation AR(p).
     """
-    lm_stat, lm_pval, f_stat, f_pval = acorr_breusch_godfrey(model, nlags=nlags)
+    lm_stat, lm_pval, f_stat, f_pval = acorr_breusch_godfrey(model, nlags=nlags, result_object=False)
     
     verdict = f"Serial Correlation up to lag {nlags} Detected (p < 0.05)" if lm_pval < 0.05 else f"No Serial Correlation up to lag {nlags} (Fail to Reject H0)"
     
