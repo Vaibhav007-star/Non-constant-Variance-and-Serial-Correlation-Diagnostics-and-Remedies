@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="obsidian">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Econometric Diagnostics & Remedies Cockpit</title>
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="/static/css/style.css">
+  
+  <!-- KaTeX for Math Equations -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" 
+          onload="renderMathInElement(document.body);"></script>
+
+  <!-- Plotly.js for Interactive Charts -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- NAVBAR -->
+    <header class="navbar">
+      <div class="brand-section">
+        <div class="brand-logo">📈</div>
+        <div>
+          <div class="brand-title">Econometrix Cockpit</div>
+          <div class="brand-subtitle">Gauss-Markov Assumptions & Robust Inference Platform</div>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <div class="status-indicator">
+          <span class="pulse-dot"></span>
+          <span>FastAPI Engine Active</span>
+        </div>
+
+        <select id="theme-select" class="theme-select" title="Switch Theme">
+          <option value="obsidian">🌑 Obsidian Neon</option>
+          <option value="sapphire">💎 Sapphire Horizon</option>
+          <option value="emerald">🌲 Emerald Matrix</option>
+          <option value="light">☀️ Clean Executive Light</option>
+        </select>
+      </div>
+    </header>
+
+    <!-- MAIN WRAPPER -->
+    <div class="main-wrapper">
+      
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        
+        <!-- Preset Datasets -->
+        <div class="control-group">
+          <div class="control-label">
+            <span>Canonical Datasets</span>
+            <span style="font-size: 10px; color: var(--accent-cyan);">Presets</span>
+          </div>
+          <div id="preset-list" class="preset-card-list">
+            <!-- Populated via app.js -->
+          </div>
+        </div>
+
+        <!-- Custom Upload -->
+        <div class="control-group">
+          <div class="control-label">
+            <span>Upload Custom Data</span>
+            <span style="font-size: 10px; color: var(--text-dim);">CSV</span>
+          </div>
+          <div id="csv-dropzone" class="dropzone">
+            <div class="dropzone-icon">📁</div>
+            <div class="dropzone-text">Drop CSV file here or <b>browse</b></div>
+            <input type="file" id="csv-file-input" accept=".csv" style="display: none;">
+          </div>
+        </div>
+
+        <!-- Model Specification -->
+        <div class="control-group">
+          <div class="control-label">
+            <span>Dependent Variable (Y)</span>
+            <span style="font-size: 10px; color: var(--accent-cyan);">Target</span>
+          </div>
+          <select id="target-select" class="input-select">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <!-- Regressors Selection -->
+        <div class="control-group">
+          <div class="control-label">
+            <span>Independent Regressors (X)</span>
+            <span style="font-size: 10px; color: var(--text-dim);">Click to Toggle</span>
+          </div>
+          <div id="features-container" class="features-container">
+            <!-- Feature Pills populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Options -->
+        <div class="control-group">
+          <label class="toggle-wrapper" for="constant-toggle">
+            <span class="toggle-label">Include Constant Intercept (&beta;<sub>0</sub>)</span>
+            <input type="checkbox" id="constant-toggle" checked style="accent-color: var(--accent-cyan); width: 16px; height: 16px;">
+          </label>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label">
+            <span>Significance Level (&alpha;)</span>
+            <span id="alpha-value" class="mono-val" style="color: var(--accent-cyan); font-weight: 700;">0.05</span>
+          </div>
+          <input type="range" id="alpha-slider" class="range-slider" min="0.01" max="0.10" step="0.01" value="0.05">
+        </div>
+
+        <!-- Execute Button -->
+        <button id="btn-run-audit" class="btn-primary">
+          <span>⚡</span>
+          <span>Run Econometric Audit</span>
+        </button>
+
+      </aside>
+
+      <!-- CONTENT AREA -->
+      <main class="content-area" style="position: relative;">
+        
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay">
+          <div class="spinner"></div>
+          <div style="font-weight: 600; font-size: 14px; color: var(--text-main);">Computing Gauss-Markov Audits & Covariance Matrices...</div>
+        </div>
+
+        <!-- KPI TOP RIBBON -->
+        <section class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-label">Observations (N)</span>
+            <span id="kpi-nobs" class="kpi-value mono-val">—</span>
+            <span class="kpi-sub">Sample Size</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">R² Score</span>
+            <span id="kpi-r2" class="kpi-value mono-val" style="color: var(--accent-cyan);">—</span>
+            <span class="kpi-sub">Coeff. of Determination</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Adjusted R²</span>
+            <span id="kpi-adj-r2" class="kpi-value mono-val">—</span>
+            <span class="kpi-sub">Degrees of Freedom Adj.</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Residual Std Err</span>
+            <span id="kpi-se" class="kpi-value mono-val">—</span>
+            <span class="kpi-sub">Error Dispersion</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">F-Statistic</span>
+            <span id="kpi-f" class="kpi-value mono-val" style="color: var(--accent-violet);">—</span>
+            <span class="kpi-sub">Overall Significance</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Durbin-Watson</span>
+            <span id="kpi-dw" class="kpi-value mono-val" style="color: var(--accent-amber);">—</span>
+            <span class="kpi-sub">AR(1) Metric (d ≈ 2)</span>
+          </div>
+        </section>
+
+        <!-- DUAL ASSUMPTION DIAGNOSTIC BANNERS -->
+        <section class="banner-grid">
+          <div id="banner-het" class="alert-banner alert-warning">
+            <!-- Dynamically populated -->
+          </div>
+          <div id="banner-ser" class="alert-banner alert-warning">
+            <!-- Dynamically populated -->
+          </div>
+        </section>
+
+        <!-- WORKSPACE TABS -->
+        <nav class="tabs-nav">
+          <button class="tab-btn active" data-tab="tab-baseline">
+            <span>📊</span> <span>Baseline OLS</span>
+          </button>
+          <button class="tab-btn" data-tab="tab-visuals">
+            <span>📈</span> <span>Diagnostic Visualizations</span>
+          </button>
+          <button class="tab-btn" data-tab="tab-tests">
+            <span>🧪</span> <span>Hypothesis Tests</span>
+          </button>
+          <button class="tab-btn" data-tab="tab-remedies">
+            <span>🛡️</span> <span>Remedies & Robust Scorecard</span>
+          </button>
+          <button class="tab-btn" data-tab="tab-summary">
+            <span>📋</span> <span>Executive Policy</span>
+          </button>
+          <button class="tab-btn" data-tab="tab-theory">
+            <span>📖</span> <span>Econometric Guide</span>
+          </button>
+        </nav>
+
+        <!-- TAB 1: BASELINE OLS -->
+        <div id="tab-baseline" class="tab-pane active">
+          <div class="glass-panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>Ordinary Least Squares (OLS) Parameter Estimates</span>
+              </div>
+              <span class="preset-badge">Classical Covariance</span>
+            </div>
+            <p class="panel-desc">
+              Baseline parameter estimates derived under classical Gauss-Markov conditions. Note: if heteroscedasticity or autocorrelation is present, point estimates remain unbiased, but standard errors and p-values are untrustworthy.
+            </p>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Variable</th>
+                    <th>Coefficient (&beta;)</th>
+                    <th>Std. Error (SE)</th>
+                    <th>t-Statistic</th>
+                    <th>p-Value</th>
+                    <th>95% Confidence Interval</th>
+                  </tr>
+                </thead>
+                <tbody id="ols-params-tbody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="glass-panel">
+            <div class="panel-header">
+              <div class="panel-title">Model Specification Metrics</div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <tbody>
+                  <tr>
+                    <td><b>Target Variable (Y)</b></td>
+                    <td id="spec-target" class="mono-val">—</td>
+                    <td><b>Degrees of Freedom (Residuals)</b></td>
+                    <td id="spec-df-resid" class="mono-val">—</td>
+                  </tr>
+                  <tr>
+                    <td><b>Akaike Info Criterion (AIC)</b></td>
+                    <td id="spec-aic" class="mono-val">—</td>
+                    <td><b>Bayesian Info Criterion (BIC)</b></td>
+                    <td id="spec-bic" class="mono-val">—</td>
+                  </tr>
+                  <tr>
+                    <td><b>Log-Likelihood</b></td>
+                    <td id="spec-llf" class="mono-val">—</td>
+                    <td><b>Prob (F-Statistic)</b></td>
+                    <td id="spec-fpval" class="mono-val">—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: DIAGNOSTIC VISUALIZATIONS -->
+        <div id="tab-visuals" class="tab-pane">
+          <div class="charts-grid">
+            
+            <!-- Chart 1: Residuals vs Fitted -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">1. Residuals vs. Fitted Values</div>
+                <span class="preset-badge" style="color: var(--accent-cyan);">Heteroscedasticity</span>
+              </div>
+              <div id="chart-residuals" class="chart-plot-container"></div>
+              <div class="chart-caption">
+                Broadening funnel/cone patterns indicate non-constant variance. The red LOWESS line reveals non-linear variance trends across predicted values.
+              </div>
+            </div>
+
+            <!-- Chart 2: Scale-Location -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">2. Scale-Location Plot (&radic;|Std Resid|)</div>
+                <span class="preset-badge" style="color: var(--accent-emerald);">Spread-Level</span>
+              </div>
+              <div id="chart-scale-location" class="chart-plot-container"></div>
+              <div class="chart-caption">
+                An upward sloping trend line confirms error spread escalates with Ŷ. A flat horizontal line signals homoscedasticity.
+              </div>
+            </div>
+
+            <!-- Chart 3: ACF -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">3. Autocorrelation Function (ACF)</div>
+                <span class="preset-badge" style="color: var(--accent-cyan);">Serial Correlation</span>
+              </div>
+              <div id="chart-acf" class="chart-plot-container"></div>
+              <div class="chart-caption">
+                Bars exceeding the shaded 95% Bartlett confidence band demonstrate statistically significant temporal autocorrelation.
+              </div>
+            </div>
+
+            <!-- Chart 4: Lag Scatter -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">4. Residual Lag Scatter (e<sub>t</sub> vs e<sub>t-1</sub>)</div>
+                <span class="preset-badge" style="color: var(--accent-amber);">AR(1) Check</span>
+              </div>
+              <div id="chart-lag-scatter" class="chart-plot-container"></div>
+              <div class="chart-caption">
+                A tight diagonal cluster confirms positive first-order autocorrelation AR(1), where positive disturbances follow positive disturbances.
+              </div>
+            </div>
+
+            <!-- Chart 5: Q-Q Plot -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">5. Normal Q-Q Plot</div>
+                <span class="preset-badge" style="color: var(--accent-violet);">Normality</span>
+              </div>
+              <div id="chart-qq" class="chart-plot-container"></div>
+              <div class="chart-caption">
+                Points adhering closely to the 45&deg; red diagonal line confirm normality of error terms. Heavy tails indicate kurtosis or outliers.
+              </div>
+            </div>
+
+            <!-- Chart 6: Error Distribution -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">6. Residual Distribution & Density</div>
+                <span class="preset-badge" style="color: var(--accent-cyan);">Histogram</span>
+              </div>
+              <div id="chart-distribution" class="chart-plot-container"></div>
+              <div class="chart-caption">
+                Empirical residual histogram with fitted Gaussian probability density function (PDF).
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- TAB 3: HYPOTHESIS TESTS -->
+        <div id="tab-tests" class="tab-pane">
+          <div class="glass-panel">
+            <div class="panel-header">
+              <div class="panel-title">Formal Econometric Diagnostic Tests</div>
+              <span class="preset-badge">&alpha; = 0.05 Benchmark</span>
+            </div>
+            <p class="panel-desc">
+              Rigorous hypothesis tests verifying the two pillars of Gauss-Markov efficiency: Constant Error Variance (Homoscedasticity) and Error Independence (No Serial Correlation).
+            </p>
+            <div id="tests-container" class="tests-grid">
+              <!-- Populated dynamically via app.js -->
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: REMEDIES & SCORECARD -->
+        <div id="tab-remedies" class="tab-pane">
+          <div class="glass-panel">
+            <div class="panel-header">
+              <div class="panel-title">Remedies & Standard Error Comparative Scorecard</div>
+              <span class="preset-badge">Robust Covariance Matrix Suite</span>
+            </div>
+            <p class="panel-desc">
+              Side-by-side comparison illustrating how classical OLS standard errors distort statistical inference. Notice how White HC3 and Newey-West HAC adjust standard errors upward to prevent spurious discovery.
+            </p>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Variable</th>
+                    <th>OLS &beta;</th>
+                    <th>OLS SE</th>
+                    <th>OLS p-Val</th>
+                    <th>HC3 SE</th>
+                    <th>HC3 p-Val</th>
+                    <th>HAC SE</th>
+                    <th>HAC p-Val</th>
+                    <th>FGLS &beta;</th>
+                    <th>FGLS SE</th>
+                  </tr>
+                </thead>
+                <tbody id="scorecard-tbody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="glass-panel">
+            <div class="panel-header">
+              <div class="panel-title">Standard Error Inflation Analysis (SE<sub>Robust</sub> / SE<sub>OLS</sub>)</div>
+            </div>
+            <p class="panel-desc">
+              Visualizes the magnitude by which standard errors were artificially underestimated by standard OLS. Ratios &gt; 1.0x signify classical test statistics were overly aggressive.
+            </p>
+            <div id="meters-container" style="display: flex; flex-direction: column; gap: 12px;">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 5: EXECUTIVE SUMMARY & EXPORT -->
+        <div id="tab-summary" class="tab-pane">
+          <div class="glass-panel">
+            <div class="panel-header">
+              <div class="panel-title">Executive Econometric Audit Report</div>
+              <span class="status-indicator">Audit Certified</span>
+            </div>
+            <h3 id="summary-verdict" style="font-size: 18px; color: var(--accent-cyan); margin-bottom: 14px;">—</h3>
+            <div style="margin-bottom: 20px;">
+              <h4 style="font-size: 14px; margin-bottom: 10px; color: var(--text-muted); text-transform: uppercase;">Prescribed Econometric Actions:</h4>
+              <ul id="recommendations-list" style="list-style: none; padding-left: 0;">
+                <!-- Populated dynamically -->
+              </ul>
+            </div>
+            
+            <div class="export-bar">
+              <button class="btn-secondary" onclick="downloadReportMarkdown()">
+                <span>📥</span> <span>Download Full Audit Report (.md)</span>
+              </button>
+              <button class="btn-secondary" onclick="downloadScorecardCsv()">
+                <span>📊</span> <span>Export Model Scorecard (.csv)</span>
+              </button>
+              <button class="btn-secondary" onclick="window.print()">
+                <span>🖨️</span> <span>Print / Save PDF</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 6: ECONOMETRIC GUIDE & THEORY -->
+        <div id="tab-theory" class="tab-pane">
+          <div class="glass-panel">
+            <div class="panel-header">
+              <div class="panel-title">Foundations of Econometric Diagnostics</div>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 20px; font-size: 14px; color: var(--text-muted);">
+              <div>
+                <h4 style="color: var(--text-main); font-size: 16px; margin-bottom: 6px;">1. The Gauss-Markov Assumptions</h4>
+                <p>
+                  In a linear regression model \( Y = X\beta + \epsilon \), the Ordinary Least Squares (OLS) estimator \( \hat{\beta} = (X'X)^{-1}X'Y \) is the <b>Best Linear Unbiased Estimator (BLUE)</b> if:
+                </p>
+                <ul style="margin-top: 8px; margin-left: 20px;">
+                  <li><b>Homoscedasticity:</b> \( \text{Var}(\epsilon_i \mid X) = \sigma^2 \) (constant variance across all observations).</li>
+                  <li><b>Error Independence:</b> \( \text{Cov}(\epsilon_t, \epsilon_s \mid X) = 0 \) for \( t \neq s \) (no serial correlation).</li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 style="color: var(--text-main); font-size: 16px; margin-bottom: 6px;">2. Consequences of Violations</h4>
+                <p>
+                  When either assumption is violated:
+                </p>
+                <ul style="margin-top: 8px; margin-left: 20px;">
+                  <li>\( \hat{\beta}_{OLS} \) remains <b>unbiased and consistent</b> (provided \( \mathbb{E}[\epsilon \mid X] = 0 \)).</li>
+                  <li>OLS is <b>inefficient</b>: it no longer possesses minimum variance.</li>
+                  <li>The classical covariance matrix \( \widehat{\text{Var}}(\hat{\beta}) = s^2(X'X)^{-1} \) is <b>biased and invalid</b>, producing misleading t-statistics, false confidence intervals, and spurious discoveries.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 style="color: var(--text-main); font-size: 16px; margin-bottom: 6px;">3. Sandwich Estimators & Robust Covariance</h4>
+                <p>
+                  White's Heteroscedasticity-Consistent (HC) covariance estimators replace the homoscedastic assumption with a robust "sandwich":
+                </p>
+                <div style="background: var(--bg-glass); padding: 12px; border-radius: 8px; margin: 8px 0; font-family: 'JetBrains Mono', monospace;">
+                  \[ \widehat{\text{Var}}_{\text{sandwich}}(\hat{\beta}) = (X'X)^{-1} \left( \sum_{i=1}^n w_i e_i^2 x_i x_i' \right) (X'X)^{-1} \]
+                </div>
+                <p>
+                  <b>HC3 (MacKinnon & White, 1985):</b> Sets \( w_i = (1 - h_{ii})^{-2} \), weighting by leverage \( h_{ii} = x_i'(X'X)^{-1}x_i \), providing optimal small-sample properties.
+                </p>
+              </div>
+
+              <div>
+                <h4 style="color: var(--text-main); font-size: 16px; margin-bottom: 6px;">4. Newey-West HAC Covariance</h4>
+                <p>
+                  When both heteroscedasticity and autocorrelation exist, the Newey-West (1987) estimator introduces Bartlett kernel weights to guarantee positive semi-definiteness:
+                </p>
+                <div style="background: var(--bg-glass); padding: 12px; border-radius: 8px; margin: 8px 0; font-family: 'JetBrains Mono', monospace;">
+                  \[ \hat{\Omega}_{\text{HAC}} = \hat{\Gamma}_0 + \sum_{j=1}^m \left( 1 - \frac{j}{m+1} \right) (\hat{\Gamma}_j + \hat{\Gamma}_j') \]
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </main>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Main Application Script -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
+

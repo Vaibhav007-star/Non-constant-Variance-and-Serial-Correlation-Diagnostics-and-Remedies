@@ -107,13 +107,17 @@ cd Non-constant-Variance-and-Serial-Correlation-Diagnostics-and-Remedies
 pip install -r requirements.txt
 ```
 
-### 2. Launch the Interactive Dashboard
+### 2. Launch the Interactive Web Platform
 ```bash
-# Direct Streamlit launch
-streamlit run app/app.py
+# Launch modern high-performance web platform (FastAPI + Interactive Plotly Cockpit)
+python -m uvicorn app.server:app --port 8000 --reload
 
 # Or on Windows, double-click:
 run_app.bat
+
+# Legacy Streamlit alternative:
+streamlit run app/app.py
+# or double-click run_streamlit.bat
 ```
 
 ### 3. Run Programmatic Audit via Python
